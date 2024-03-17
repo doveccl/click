@@ -1,0 +1,10 @@
+{
+  "include": ["src/**/*", "src/**/*.vue"],
+  "compilerOptions": {
+    "strict": true,
+    "esModuleInterop": true
+  },
+  "vueCompilerOptions": {
+    "plugins": ["@vue/language-plugin-pug"]
+  }
+}

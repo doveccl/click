@@ -1,0 +1,67 @@
+{
+  "name": "click",
+  "version": "1.2.2",
+  "author": "Doveccl",
+  "description": "Auto click by image template match",
+  "main": "out/main",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "dev": "electron-vite",
+    "build-src": "electron-vite build",
+    "build": "npm run build-src && electron-builder"
+  },
+  "build": {
+    "appId": "com.doveccl.click",
+    "productName": "Auto Click",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "out/"
+    ],
+    "win": {
+      "icon": "icons/logo.ico",
+      "target": [
+        "portable"
+      ]
+    },
+    "mac": {
+      "icon": "icons/logo.icns",
+      "target": [
+        "zip"
+      ]
+    }
+  },
+  "dependencies": {
+    "@nut-tree/nut-js": "^4.0.0",
+    "@techstark/opencv-js": "4.9.0-release.3",
+    "jimp": "^0.22.12",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@iconify-json/ep": "^1.1.15",
+    "@prettier/plugin-pug": "^3.0.0",
+    "@types/lodash": "^4.17.0",
+    "@types/node": "^20.11.28",
+    "@types/screenshot-desktop": "^1.12.3",
+    "@types/sortablejs": "^1.15.8",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "@vue/language-plugin-pug": "^2.0.6",
+    "@vueuse/core": "^10.9.0",
+    "electron": "^29.1.4",
+    "electron-builder": "^24.13.3",
+    "electron-devtools-assembler": "^1.2.0",
+    "electron-vite": "^2.1.0",
+    "element-plus": "^2.6.1",
+    "prettier": "^3.2.5",
+    "pug": "^3.0.2",
+    "sortablejs": "^1.15.2",
+    "stylus": "^0.63.0",
+    "unplugin-auto-import": "^0.17.5",
+    "unplugin-icons": "^0.18.5",
+    "unplugin-vue-components": "^0.26.0",
+    "vite": "^5.1.6",
+    "vue": "^3.4.21"
+  }
+}
