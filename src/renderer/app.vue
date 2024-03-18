@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Sortable from 'sortablejs'
 import zh from 'element-plus/es/locale/lang/zh-cn'
-import type { UploadRawFile } from 'element-plus'
+import { type UploadRawFile } from 'element-plus'
 
 const nop = () => 0
 const dark = useDark()
@@ -77,6 +77,8 @@ addEventListener('message', ({ data }) => {
   } else if (data.log) {
     logs.value.unshift(data.log)
     logs.value.splice(100, logs.value.length)
+  } else if (data.err) {
+    ElNotification.error(data.err)
   }
 })
 

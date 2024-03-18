@@ -8,6 +8,7 @@ declare global {
   const EffectScope: typeof import('vue')['EffectScope']
   const ElMessage: typeof import('element-plus/es')['ElMessage']
   const ElMessageBox: typeof import('element-plus/es')['ElMessageBox']
+  const ElNotification: typeof import('element-plus/es')['ElNotification']
   const IEpMoon: typeof import('~icons/ep/moon')['default']
   const IEpSunny: typeof import('~icons/ep/sunny')['default']
   const asyncComputed: typeof import('@vueuse/core')['asyncComputed']

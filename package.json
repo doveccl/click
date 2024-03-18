@@ -6,10 +6,14 @@
   "main": "out/main",
   "license": "MIT",
   "private": true,
+  "opencv4nodejs": {
+    "autoBuildOpencvVersion": "4.8.0"
+  },
   "scripts": {
     "dev": "electron-vite",
     "build-src": "electron-vite build",
-    "build": "npm run build-src && electron-builder"
+    "build": "npm run build-src && electron-builder",
+    "electron-rebuild": "build-opencv --electron build"
   },
   "build": {
     "appId": "com.doveccl.click",
@@ -35,11 +39,11 @@
   },
   "dependencies": {
     "@nut-tree/nut-js": "^4.0.0",
-    "@techstark/opencv-js": "4.9.0-release.3",
-    "jimp": "^0.22.12",
+    "@u4/opencv4nodejs": "^6.5.3",
     "lodash": "^4.17.21"
   },
   "devDependencies": {
+    "@electron/rebuild": "^3.6.0",
     "@iconify-json/ep": "^1.1.15",
     "@prettier/plugin-pug": "^3.0.0",
     "@types/lodash": "^4.17.0",

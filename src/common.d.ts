@@ -3,5 +3,5 @@ type TMatcher = {
   desc?: string
   ratio?: number
   threshold?: number
-  mat?: import('@techstark/opencv-js').Mat
+  mat?: import('@u4/opencv4nodejs').Mat
 }
