@@ -58,6 +58,7 @@ function select(m: TMatcher, f: UploadRawFile) {
   return false
 }
 
+const match = ref('')
 const loading = ref(false)
 const running = ref(false)
 const logs = ref<string[]>([])
@@ -69,11 +70,16 @@ const stop = () => ((loading.value = true), send('stop'))
 addEventListener('message', ({ data }) => {
   if (data === 'started') {
     logs.value = []
+    match.value = ''
     running.value = true
     loading.value = false
   } else if (data === 'stopped') {
     running.value = false
     loading.value = false
+  } else if (data.img) {
+    const r = new FileReader()
+    r.readAsDataURL(new Blob([data.img]))
+    r.onload = () => (match.value = r.result as string)
   } else if (data.log) {
     logs.value.unshift(data.log)
     logs.value.splice(100, logs.value.length)
@@ -119,6 +125,7 @@ el-config-provider(:locale="zh")
                   i-ep-upload
           el-switch(v-bind="switcher" v-model="dark" inline-prompt)
     el-card(v-if="running")
+      img(v-if="match" :src="match" style="max-width: 100%")
       el-input(v-model="logstr" read-only rows="15" type="textarea")
     el-card(v-else)
       el-tabs(v-model="tab" editable ref="tabRef" @tab-add="add().catch(nop)" @tab-remove="del")

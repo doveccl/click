@@ -7,13 +7,13 @@
   "license": "MIT",
   "private": true,
   "opencv4nodejs": {
-    "autoBuildOpencvVersion": "4.8.0"
+    "autoBuildOpencvVersion": "4.9.0"
   },
   "scripts": {
     "dev": "electron-vite",
     "build-src": "electron-vite build",
     "build": "npm run build-src && electron-builder",
-    "electron-rebuild": "build-opencv --electron build"
+    "electron-rebuild": "CXXFLAGS=-std=c++17 build-opencv --electron --nocontrib build"
   },
   "build": {
     "appId": "com.doveccl.click",

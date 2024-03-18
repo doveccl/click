@@ -42,6 +42,7 @@ async function loop() {
       x = trand(x - w, x + w)
       y = trand(y - h, y + h)
       mat.drawCircle(new cv.Point2(x, y), 5, new cv.Vec3(255, 0, 0), -5)
+      post({ img: cv.imencode('.jpg', mat) })
       post({ log: `鼠标点击位置 (${x}, ${y})` })
       await mouse.move([{ x: (x * sw) / mat.cols, y: (y * sh) / mat.rows }])
       await mouse.leftClick()
@@ -49,8 +50,8 @@ async function loop() {
     }
   }
 
-  mat.release()
   find || post({ log: '未匹配到相似图像' })
+  mat.release()
   if (timer !== null) timer = setTimeout(loop, 500)
 }
 
