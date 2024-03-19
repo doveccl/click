@@ -5,8 +5,8 @@ import workerPath from './worker?modulePath'
 
 async function createWindow() {
   const mainWindow = new BrowserWindow({
-    width: 1024,
-    height: 768,
+    width: 900,
+    height: 800,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js')
     }

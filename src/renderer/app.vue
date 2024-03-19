@@ -27,9 +27,9 @@ async function del(p: unknown) {
 }
 
 const getList = (k = '') => JSON.parse(localStorage.getItem(k) ?? '[]')
-const list = ref(getList(tab.value))
+const list = ref<TMatcher[]>(getList(tab.value))
 const newItem = () => ({ id: Date.now() + Math.random(), ratio: 1, threshold: 0.8 })
-watchDeep([tab, list], ([t, l], [ot, ol]) => {
+watchDeep([tab, list] as const, ([t, l], [ot, ol]) => {
   if (t !== ot) {
     list.value = getList(t)
   } else if (l === ol) {
@@ -44,8 +44,8 @@ watch(tableRef, r => {
   new Sortable(r.$el.querySelector('tbody'), {
     handle: '.draggable',
     onEnd({ oldIndex, newIndex }) {
-      const a = list.value.splice(oldIndex, 1)
-      list.value.splice(newIndex, 0, ...a)
+      const a = list.value.splice(oldIndex!, 1)
+      list.value.splice(newIndex!, 0, ...a)
     }
   })
 })
@@ -58,33 +58,54 @@ function select(m: TMatcher, f: UploadRawFile) {
   return false
 }
 
-const match = ref('')
+const title = ref('方案')
 const loading = ref(false)
 const running = ref(false)
-const logs = ref<string[]>([])
-const logstr = computed(() => logs.value.join('\n'))
 const forbid = computed(() => !list.value.length || !list.value.every(({ img = '' }) => img))
-const start = () => ((loading.value = true), send(toRaw(list.value)))
-const stop = () => ((loading.value = true), send('stop'))
+const cvs = ref<HTMLCanvasElement>()
+const conds = reactive<number[]>([])
+
+function start() {
+  loading.value = true
+  send(toRaw(list.value))
+}
+function stop() {
+  loading.value = true
+  send('stop')
+}
 
 addEventListener('message', ({ data }) => {
   if (data === 'started') {
-    logs.value = []
-    match.value = ''
     running.value = true
     loading.value = false
+    title.value = '监控'
   } else if (data === 'stopped') {
     running.value = false
     loading.value = false
-  } else if (data.img) {
-    const r = new FileReader()
-    r.readAsDataURL(new Blob([data.img]))
-    r.onload = () => (match.value = r.result as string)
-  } else if (data.log) {
-    logs.value.unshift(data.log)
-    logs.value.splice(100, logs.value.length)
-  } else if (data.err) {
-    ElNotification.error(data.err)
+    title.value = '方案'
+  } else if (data.message) {
+    ElNotification.error(data)
+  }
+  if (!cvs.value) return
+  const ctx = cvs.value.getContext('2d')!
+  if (data.data) {
+    const { width, height } = data
+    const buf = new Uint8ClampedArray(data.data)
+    cvs.value.width = width
+    cvs.value.height = height
+    ctx.putImageData(new ImageData(buf, width), 0, 0)
+    conds.splice(0, conds.length)
+  } else if (data.w) {
+    const { x, y, w, h } = data
+    ctx.fillStyle = '#0617'
+    ctx.fillRect(x - w, y - h, 2 * w, 2 * h)
+  } else if (data.x) {
+    ctx.beginPath()
+    ctx.arc(data.x, data.y, 10, 0, 2 * Math.PI)
+    ctx.fillStyle = '#f00c'
+    ctx.fill()
+  } else if (data.confidence) {
+    conds.push(data.confidence)
   }
 })
 
@@ -98,12 +119,20 @@ function upload(f: UploadRawFile) {
   const r = new FileReader()
   r.readAsText(f)
   r.onload = () => {
+    const str = r.result as string
     const name = f.name.replace(/\.[^.]+$/, '')
     tabs.value.includes(name) || tabs.value.push(name)
-    localStorage.setItem(name, r.result as string)
-    tab.value = name
+    localStorage.setItem(name, str)
+    if (tab.value === name) list.value = JSON.parse(str)
+    else tab.value = name
   }
   return false
+}
+
+function getType(i: number) {
+  if (i >= conds.length) return ''
+  if (conds[i] < (list.value[i].threshold ?? 0.8)) return 'danger'
+  return 'success'
 }
 </script>
 
@@ -124,48 +153,51 @@ el-config-provider(:locale="zh")
                 el-icon
                   i-ep-upload
           el-switch(v-bind="switcher" v-model="dark" inline-prompt)
-    el-card(v-if="running")
-      img(v-if="match" :src="match" style="max-width: 100%")
-      el-input(v-model="logstr" read-only rows="15" type="textarea")
-    el-card(v-else)
-      el-tabs(v-model="tab" editable ref="tabRef" @tab-add="add().catch(nop)" @tab-remove="del")
-        el-tab-pane(v-for="i in tabs" :key="i" :label="i" :name="i")
-      el-table(:data="list" ref="tableRef" row-key="id" table-layout="auto")
-        el-table-column(label="#")
-          template(#default)
-            el-icon.draggable(style="cursor: move")
-              i-ep-sort
-        el-table-column(header-align="center" label="描述")
-          template(#default="{ row }")
-            el-input(v-model="row.desc" placeholder="添加描述")
-        el-table-column(header-align="center" label="匹配图像" prop="img")
-          template(#default="{ row }")
-            .image(v-if="row.img")
-              img(:src="row.img")
-              .actions
-                el-popconfirm(title="确认删除" @confirm="delete row.img")
+    el-collapse(v-model="title" accordion)
+      el-collapse-item(name="方案" title="方案")
+        el-tabs(v-model="tab" editable ref="tabRef" @tab-add="add().catch(nop)" @tab-remove="del")
+          el-tab-pane(v-for="i in tabs" :key="i" :label="i" :name="i")
+        el-table(:data="list" ref="tableRef" row-key="id" table-layout="auto")
+          el-table-column(label="#")
+            template(#default)
+              el-icon.draggable(style="cursor: move")
+                i-ep-sort
+          el-table-column(header-align="center" label="描述")
+            template(#default="{ row }")
+              el-input(v-model="row.desc" placeholder="添加描述")
+          el-table-column(header-align="center" label="匹配图像" prop="img")
+            template(#default="{ row }")
+              .image(v-if="row.img")
+                img(:src="row.img")
+                .actions
+                  el-popconfirm(title="确认删除" @confirm="delete row.img")
+                    template(#reference)
+                      el-button(link type="danger")
+                        el-icon
+                          i-ep-delete
+              el-upload(v-else :before-upload="f => select(row, f)" :show-file-list="false" accept="image/*" drag)
+                el-icon
+                  i-ep-plus
+          el-table-column(align="center" header-align="center" label="可点区域比")
+            template(#default="{ row }")
+              el-input-number(v-model="row.ratio" :controls="false" :min="0.1" :precision="2")
+          el-table-column(align="center" header-align="center" label="最低相似度")
+            template(#default="{ row }")
+              el-input-number(v-model="row.threshold" :controls="false" :max="1" :precision="2")
+          el-table-column(label="操作")
+            template(#default="{ $index }")
+              el-space
+                el-link(type="primary" @click="list.splice($index + 1, 0, newItem())") 插入
+                el-popconfirm(title="确认删除" @confirm="list.splice($index, 1)")
                   template(#reference)
-                    el-button(link type="danger")
-                      el-icon
-                        i-ep-delete
-            el-upload(v-else :before-upload="f => select(row, f)" :show-file-list="false" accept="image/*" drag)
-              el-icon
-                i-ep-plus
-        el-table-column(align="center" header-align="center" label="可点区域比")
-          template(#default="{ row }")
-            el-input-number(v-model="row.ratio" :controls="false" :min="0.1" :precision="2")
-        el-table-column(align="center" header-align="center" label="最低相似度")
-          template(#default="{ row }")
-            el-input-number(v-model="row.threshold" :controls="false" :max="1" :precision="2")
-        el-table-column(label="操作")
-          template(#default="{ $index }")
-            el-space
-              el-link(type="primary" @click="list.splice($index + 1, 0, newItem())") 插入
-              el-popconfirm(title="确认删除" @confirm="list.splice($index, 1)")
-                template(#reference)
-                  el-link(type="danger") 删除
-        template(#empty)
-          el-link(type="primary" @click="list.push(newItem())") 添加
+                    el-link(type="danger") 删除
+          template(#empty)
+            el-link(type="primary" @click="list.push(newItem())") 添加
+      el-collapse-item(name="监控" title="监控")
+        div(style="position: relative")
+          canvas(ref="cvs" style="width: 100%")
+          el-space.side(alignment="start" direction="vertical")
+            el-text(v-for="(m, i) in list" :type="getType(i)" tag="b") {{ m.desc ?? '#' + i }}: {{ conds[i]?.toFixed(2) ?? '...' }}
 </template>
 
 <style lang="stylus">
@@ -216,4 +248,11 @@ body
     opacity 0
 .image:hover > .actions
   opacity 1
+
+.side
+  top 0
+  left 0
+  padding 1em
+  position absolute
+  background #555c
 </style>
