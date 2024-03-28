@@ -1,7 +1,7 @@
 /// <reference types="electron-vite/node" />
 
 declare global {
-  const send: typeof import('../preload').send
+  const api: typeof import('../preload').default
 }
 
 export {}

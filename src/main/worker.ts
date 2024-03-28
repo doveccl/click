@@ -1,76 +1,96 @@
-import cv, { type Mat } from '@u4/opencv4nodejs'
-import { isArray, pick, random } from 'lodash'
-import { mouse, screen } from '@nut-tree/nut-js'
+import Image from './image'
+import { fileURLToPath } from 'node:url'
+import { readFile } from 'node:fs/promises'
 import { parentPort } from 'node:worker_threads'
+import { mouse, screen } from '@nut-tree/nut-js'
+import { each, random } from 'lodash'
 
-const post = (m: unknown) => parentPort?.postMessage(m)
+function send(type: string, value?: unknown) {
+  parentPort?.postMessage({ type, value })
+}
 
 function trand(min = -1, max = 1) {
   return (random(min, max, true) + random(min, max, true)) / 2
 }
 
-let matchers: TMatcher[] = []
+let key = ''
+let delay = 500
+let counts: number[] = []
+let images: Record<string, Image> = {}
+let profiles: Record<string, TMatcher[]> = {}
 let timer: ReturnType<typeof setTimeout> | null = null
 
-function matchTemplate(i: Mat, t: Mat) {
-  const res = i.matchTemplate(t, cv.TM_CCOEFF_NORMED)
-  const loc = cv.minMaxLoc(res)
-  return res.release(), loc
+async function getImage(f = '') {
+  if (images[f]) return images[f]
+  const buf = await readFile(fileURLToPath(f))
+  return (images[f] = await Image.decode(buf))
 }
 
-async function loop() {
-  const sc = await screen.grab()
+async function doMatch() {
   const sw = await screen.width()
   const sh = await screen.height()
-  const mat = new cv.Mat(sc.data, sc.height, sc.width, cv.CV_8UC4)
-  post(pick(await sc.toRGB(), 'data', 'width', 'height'))
+  const { data, width } = await (await screen.grab()).toRGB()
+  const sc = new Image(data, width)
+  send('screen', sc)
 
-  for (let i = 0; i < matchers.length; i++) {
-    const m = matchers[i]
-    const loc = matchTemplate(mat, m.mat!)
-    if (!timer) break
-    post({ i, confidence: loc.maxVal })
-    if (loc.maxVal > (m.threshold ?? 0.8)) {
-      let [w, h] = [m.mat!.cols / 2, m.mat!.rows / 2]
-      let [x, y] = [loc.maxLoc.x + w, loc.maxLoc.y + h]
+  let ok = false
+  let m: TMatcher = { id: 0 }
+  for (m of profiles[key]) {
+    if (m.max && counts[m.id] >= m.max) continue
+    send('check', m)
+    const t = await getImage(m.image)
+    const r = await sc.find(t)
+    send('result', { ...m, ...r })
+    if (r.v > (m.threshold ?? 0.9)) {
+      ok = true
+      counts[m.id] = (counts[m.id] ?? 0) + 1
+      if (m.max && counts[m.id] >= m.max) send('max', m)
+      if (m.action && m.action !== 'click') break
+      let [w, h] = [t.width / 2, t.height / 2]
+      let [x, y] = [r.x + w, r.y + h]
       w *= m.ratio ?? 1
       h *= m.ratio ?? 1
-      post({ x, y, w, h })
+      send('rect', { x, y, w, h })
       x = trand(x - w, x + w)
       y = trand(y - h, y + h)
-      post({ x, y })
-      await mouse.move([{ x: (x * sw) / mat.cols, y: (y * sh) / mat.rows }])
+      if (!timer) break
+      send('click', { x, y })
+      await mouse.move([{ x: (x * sw) / sc.width, y: (y * sh) / sc.height }])
       await mouse.leftClick()
       break
     }
   }
 
-  mat.release()
-  if (timer) timer = setTimeout(loop, 1000)
+  sc.release()
+  if (ok && m.action === 'stop') return stop(), false
+  if (ok && m.action === 'jump') return start(profiles, m.to!), false
+  return true
 }
 
-function stop() {
-  if (timer) clearTimeout(timer)
-  timer = null
-  while (matchers.length) matchers.pop()?.mat?.release()
-  post('stopped')
-}
-
-async function start(list: TMatcher[]) {
-  for (const m of (matchers = list)) {
-    m.img = m.img!.replace(/^[^,]+,/, '')
-    m.mat = cv.imdecode(Buffer.from(m.img, 'base64'), cv.IMREAD_UNCHANGED)
+async function loop() {
+  try {
+    const next = await doMatch()
+    if (timer && next) timer = setTimeout(loop, delay)
+  } catch (e) {
+    stop(e)
   }
-  post('started')
-  timer = setTimeout(loop)
 }
 
-parentPort?.on('message', m => {
-  if (m === 'stop') stop()
-  else if (isArray(m)) start(m)
-})
+async function start(p: typeof profiles, k: string, d = delay) {
+  if (k in p && p[k].length) {
+    counts = []
+    profiles = p
+    send('started', (key = k))
+    timer = setTimeout(loop, (delay = d))
+  } else {
+    stop(`Invalid profile "${k}"`)
+  }
+}
 
-process.on('unhandledRejection', err => {
-  post(err)
-  stop()
-})
+function stop(err?: unknown) {
+  if (timer) clearTimeout(timer), (timer = null)
+  each(images, i => i.release())
+  send('stopped', err)
+}
+
+parentPort?.on('message', m => (m === 'stop' ? stop() : start(...(m as [{}, '']))))

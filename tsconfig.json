@@ -2,7 +2,9 @@
   "include": ["src/**/*", "src/**/*.vue"],
   "compilerOptions": {
     "strict": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "target": "ESNext",
+    "module": "NodeNext"
   },
   "vueCompilerOptions": {
     "plugins": ["@vue/language-plugin-pug"]

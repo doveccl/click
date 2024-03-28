@@ -1,7 +1,10 @@
 type TMatcher = {
-  img?: string
-  desc?: string
-  ratio?: number
+  id: number
+  name?: string
+  image?: string
   threshold?: number
-  mat?: import('@u4/opencv4nodejs').Mat
+  max?: number
+  action?: 'click' | 'stop' | 'jump'
+  ratio?: number
+  to?: string
 }

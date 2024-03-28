@@ -19,13 +19,14 @@ export default defineConfig({
       vue(),
       Icons({ autoInstall: true }),
       AutoImport({
+        dts: true,
         imports: ['vue', '@vueuse/core'],
-        resolvers: [IconsResolver(), ElementPlusResolver()],
-        dts: __dirname + '/src/renderer/imports.d.ts'
+        resolvers: [IconsResolver(), ElementPlusResolver()]
       }),
       Components({
-        resolvers: [IconsResolver(), ElementPlusResolver()],
-        dts: __dirname + '/src/renderer/components.d.ts'
+        dts: true,
+        dirs: ['components'],
+        resolvers: [IconsResolver(), ElementPlusResolver()]
       })
     ]
   }
