@@ -12,6 +12,7 @@ let cvjs: TCVJS | null = null
 async function initCV() {
   if (cvcc || cvjs) return
   try {
+    // throw 'disable native for test'
     cvcc = (await import('@u4/opencv4nodejs')).default
   } catch (e) {
     console.warn('init native cv:', e)

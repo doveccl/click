@@ -51,9 +51,11 @@ onBeforeUnmount(() => removeEventListener('message', handler))
 <template lang="pug">
 .relative
   canvas(ref="cvs" style="width: 100%")
-  el-space.side(alignment="start" direction="vertical")
+  .side
     template(v-for="(m, i) in matchers" :key="m.id")
-      el-text(:tag="max.get(m.id) ? 'del' : 'b'" :type="color(m)") {{ m.name ?? `#${i}` }} {{ result(m) }}
+      el-row(justify="space-between")
+        el-text(:tag="max.get(m.id) ? 's' : 'b'") {{ m.name ?? `#${i}` }}
+        el-text(:type="color(m)" tag="b") {{ result(m) }}
 </template>
 
 <style lang="sass">
@@ -62,8 +64,8 @@ onBeforeUnmount(() => removeEventListener('message', handler))
 .side
   top: 0
   left: 0
-  padding: 1em
-  min-width: 5em
+  min-width: 8em
+  padding: 4px 8px
   position: absolute
   background: #666c
 </style>
