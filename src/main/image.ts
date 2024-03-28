@@ -12,7 +12,7 @@ let cvjs: TCVJS | null = null
 async function initCV() {
   if (cvcc || cvjs) return
   try {
-    cvcc = await import('@u4/opencv4nodejs')
+    cvcc = (await import('@u4/opencv4nodejs')).default
   } catch (e) {
     console.warn('init native cv:', e)
     cvjs = (await import('@techstark/opencv-js')).default
