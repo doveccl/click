@@ -12,6 +12,7 @@ declare module 'vue' {
     ElCollapse: typeof import('element-plus/es')['ElCollapse']
     ElCollapseItem: typeof import('element-plus/es')['ElCollapseItem']
     ElIcon: typeof import('element-plus/es')['ElIcon']
+    ElImage: typeof import('element-plus/es')['ElImage']
     ElInput: typeof import('element-plus/es')['ElInput']
     ElInputNumber: typeof import('element-plus/es')['ElInputNumber']
     ElLink: typeof import('element-plus/es')['ElLink']
@@ -33,6 +34,7 @@ declare module 'vue' {
     IEpPlus: typeof import('~icons/ep/plus')['default']
     IEpSort: typeof import('~icons/ep/sort')['default']
     IEpUpload: typeof import('~icons/ep/upload')['default']
+    IEpView: typeof import('~icons/ep/view')['default']
     ImageUploader: typeof import('./components/ImageUploader.vue')['default']
     ScreenMonitor: typeof import('./components/ScreenMonitor.vue')['default']
   }

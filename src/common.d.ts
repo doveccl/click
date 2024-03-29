@@ -3,8 +3,9 @@ type TMatcher = {
   name?: string
   image?: string
   threshold?: number
-  max?: number
-  action?: 'click' | 'stop' | 'jump'
+  action: 'click' | 'stop' | 'jump'
   ratio?: number
   to?: string
+  max?: number
+  delay?: number
 }

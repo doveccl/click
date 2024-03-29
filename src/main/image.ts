@@ -1,5 +1,4 @@
 import Jimp from 'jimp'
-import { app } from 'electron'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
@@ -49,6 +48,7 @@ export default class Image {
 
   async toFileURL() {
     const i = new Jimp(this)
+    const { app } = await import('electron')
     const name = `${Date.now()}.${i.getExtension()}`
     const path = join(app.getPath('userData'), 'images', name)
     return await i.writeAsync(path), pathToFileURL(path).href

@@ -19,13 +19,14 @@ function handler(e: MessageEvent) {
     ctx.putImageData(new ImageData(buf, r.width), 0, 0)
     val.forEach((_, i) => max.get(i) || val.delete(i))
   } else if (type === 'rect') {
-    const { x, y, w, h } = r
-    ctx.fillStyle = '#0617'
-    ctx.fillRect(x - w, y - h, 2 * w, 2 * h)
+    ctx.fillStyle = '#00bb'
+    ctx.fillRect(r.x, r.y, r.w, r.h)
   } else if (type === 'click') {
+    ctx.fillStyle = '#0909'
+    ctx.fillRect(r.x, r.y, r.w, r.h)
     ctx.beginPath()
-    ctx.arc(r.x, r.y, 10, 0, 2 * Math.PI)
-    ctx.fillStyle = '#f00c'
+    ctx.arc(r.cx, r.cy, 10, 0, 2 * Math.PI)
+    ctx.fillStyle = '#e00e'
     ctx.fill()
   }
 }
@@ -34,7 +35,7 @@ function color(m: TMatcher) {
   const n = val.get(m.id)
   if (!n) return ''
   if (n === -1) return 'info'
-  return n > (m.threshold ?? 0.9) ? 'success' : 'danger'
+  return n > (m.threshold ?? 0.95) ? 'success' : 'danger'
 }
 
 function result(m: TMatcher) {
@@ -51,7 +52,7 @@ onBeforeUnmount(() => removeEventListener('message', handler))
 <template lang="pug">
 .relative
   canvas(ref="cvs" style="width: 100%")
-  .side
+  .side(v-if="matchers?.length")
     template(v-for="(m, i) in matchers" :key="m.id")
       el-row(justify="space-between")
         el-text(:tag="max.get(m.id) ? 's' : 'b'") {{ m.name ?? `#${i}` }}

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { download, readBuffer } from '../utils/file'
 import type { UploadRawFile } from 'element-plus'
 
 const props = defineProps<{ name?: string; modelValue?: string }>()
@@ -8,32 +9,35 @@ const emit = defineEmits<{
 }>()
 
 function save(img: unknown) {
-  api.save(img).then(
+  return api.save(img).then(
     s => emit('update:modelValue', s),
     e => ElMessage.error(e.message)
   )
 }
 
-function select(f: UploadRawFile) {
+async function upload(f: UploadRawFile) {
   const n = f.name.replace(/\.[^.]+$/, '')
   if (!props.name) emit('update:name', n)
-  const r = new FileReader()
-  r.onload = () => save(r.result)
-  r.readAsArrayBuffer(f)
-  return false
+  return !save(await readBuffer(f))
 }
 </script>
 
 <template lang="pug">
 .image(v-if="modelValue")
-  img(:src="modelValue")
+  el-image(:preview-src-list="[modelValue]" :src="modelValue" preview-teleported)
   .actions
+    el-button(link @click="$el.querySelector('img').click()")
+      el-icon
+        i-ep-view
+    el-button(link type="primary" @click="download(modelValue)")
+      el-icon
+        i-ep-download
     el-popconfirm(title="Delete" @confirm="emit('update:modelValue')")
       template(#reference)
         el-button(link type="danger")
           el-icon
             i-ep-delete
-el-upload(v-else :before-upload="select" :show-file-list="false" accept="image/*" drag)
+el-upload(v-else :before-upload="upload" :show-file-list="false" accept="image/*" drag)
   el-icon
     i-ep-plus
 </template>
@@ -44,10 +48,6 @@ el-upload(v-else :before-upload="select" :show-file-list="false" accept="image/*
   position: relative
   justify-content: center
   border: var(--el-border)
-  border-radius: var(--el-border-radius-base)
-  img
-    max-width: 100%
-    border-radius: inherit
   .actions
     top: 0
     left: 0
@@ -55,10 +55,10 @@ el-upload(v-else :before-upload="select" :show-file-list="false" accept="image/*
     height: 100%
     display: flex
     position: absolute
-    background: #000b
-    border-radius: inherit
+    background: #000a
+    backdrop-filter: blur(5px)
     justify-content: center
-    transition: all 0.2s ease-in-out
+    transition: all 0.3s ease-in-out
     opacity: 0
   &:hover > .actions
     opacity: 1

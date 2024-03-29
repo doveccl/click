@@ -1,6 +1,6 @@
 {
   "name": "click",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "author": "Doveccl",
   "description": "Auto click by image template match",
   "main": "out/main",
@@ -37,7 +37,7 @@
     }
   },
   "dependencies": {
-    "@nut-tree/nut-js": "^4.0.0",
+    "@nut-tree/nut-js": "^4.0.1",
     "@techstark/opencv-js": "4.9.0-release.3",
     "@u4/opencv4nodejs": "^6.5.3",
     "jimp": "^0.22.12",

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Sortable from 'sortablejs'
 import { upperFirst } from 'lodash'
+import { downloadText, readText } from './utils/file'
 import { type UploadRawFile } from 'element-plus'
 
 const nop = () => 0
@@ -46,7 +47,7 @@ const running = ref(false)
 
 function start() {
   loading.value = true
-  return api.start(toRaw(config.value), key.value)
+  return api.start(key.value, toRaw(config.value))
 }
 function stop() {
   loading.value = true
@@ -67,17 +68,8 @@ addEventListener('message', e => {
   }
 })
 
-function download() {
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(config.value)]))
-  a.download = 'profiles.json'
-  a.click()
-}
-function upload(f: UploadRawFile) {
-  const r = new FileReader()
-  r.onload = () => Object.assign(config.value, JSON.parse(r.result as string))
-  r.readAsText(f)
-  return false
+async function upload(f: UploadRawFile) {
+  return !Object.assign(config.value, await readText(f))
 }
 </script>
 
@@ -88,7 +80,7 @@ el-main.vspace
       el-button(v-if="running" :loading="loading" type="danger" @click="stop") Stop (Ctrl + Alt + T)
       el-button(v-else :disabled="!key || !config[key].length" :loading="loading" type="success" @click="start") Start
       el-space(size="large")
-        el-button(@click="download")
+        el-button(@click="downloadText(JSON.stringify(config), 'config.json')")
           el-icon
             i-ep-download
         el-upload(:before-upload="upload" :show-file-list="false" accept="application/json")
@@ -114,7 +106,7 @@ el-main.vspace
             image-uploader(v-model="row.image" v-model:name="row.name")
         el-table-column(align="center" header-align="center" label="Threshold" width="120")
           template(#default="{ row }")
-            el-input-number(v-model="row.threshold" :controls="false" :precision="4" placeholder="0.9")
+            el-input-number(v-model="row.threshold" :controls="false" :precision="4" placeholder="0.95")
         el-table-column(align="center" header-align="center" label="Action" width="120")
           template(#default="{ row }")
             el-select(v-model="row.action")
@@ -128,6 +120,9 @@ el-main.vspace
         el-table-column(align="center" header-align="center" label="Max" width="120")
           template(#default="{ row }")
             el-input-number(v-model="row.max" :controls="false" :min="1" placeholder="♾️")
+        el-table-column(align="center" header-align="center" label="Delay" width="120")
+          template(#default="{ row }")
+            el-input-number(v-model="row.delay" :controls="false" :min="0" :precision="1" placeholder="0.5s")
         el-table-column(fixed="right" label="Edit" width="120")
           template(#default="{ $index }")
             el-space
