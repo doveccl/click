@@ -4,6 +4,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 ipcRenderer.on('', (_, m) => postMessage(m, '*'))
 
 const api = {
+  dev: () => ipcRenderer.invoke('dev'),
   save: (i: unknown) => ipcRenderer.invoke('save', i),
   start: (k: string, p: Record<string, TMatcher[]>) => ipcRenderer.invoke('start', k, p),
   stop: () => ipcRenderer.invoke('stop')

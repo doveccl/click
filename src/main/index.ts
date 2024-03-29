@@ -1,6 +1,6 @@
 import bridge from './bridge'
 import { join } from 'node:path'
-import { app, BrowserWindow, Menu } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu } from 'electron'
 
 app.on('window-all-closed', app.quit)
 app.whenReady().then(async () => {
@@ -17,4 +17,5 @@ app.whenReady().then(async () => {
     Menu.setApplicationMenu(null)
   }
   bridge.on('message', m => mainWindow.webContents.send('', m))
+  ipcMain.handle('dev', () => mainWindow.webContents.openDevTools())
 })

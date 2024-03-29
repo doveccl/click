@@ -6,6 +6,7 @@ import { type UploadRawFile } from 'element-plus'
 
 const nop = () => 0
 const dark = useDark()
+const openDev = () => api.dev()
 const switcher = { activeIcon: IEpMoon, inactiveIcon: IEpSunny }
 
 const config = useStorage<Record<string, TMatcher[]>>('config', {})
@@ -69,14 +70,14 @@ addEventListener('message', e => {
 })
 
 async function upload(f: UploadRawFile) {
-  return !Object.assign(config.value, await readText(f))
+  return !Object.assign(config.value, JSON.parse(await readText(f)))
 }
 </script>
 
 <template lang="pug">
 el-main.vspace
   el-card
-    el-row(justify="space-between")
+    el-row(justify="space-between" @click.alt="openDev")
       el-button(v-if="running" :loading="loading" type="danger" @click="stop") Stop (Ctrl + Alt + T)
       el-button(v-else :disabled="!key || !config[key].length" :loading="loading" type="success" @click="start") Start
       el-space(size="large")
