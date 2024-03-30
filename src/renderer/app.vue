@@ -99,7 +99,7 @@ el-main.vspace
           template(#default)
             el-icon.draggable(style="cursor: move")
               i-ep-sort
-        el-table-column(align="center" header-align="center" label="Name" width="100")
+        el-table-column(align="center" fixed header-align="center" label="Name" width="100")
           template(#default="{ row, $index }")
             el-input(v-model="row.name" :placeholder="`#${$index}`")
         el-table-column(align="center" header-align="center" label="Image" min-width="150")
@@ -116,7 +116,7 @@ el-main.vspace
           template(#default="{ row }")
             el-text(v-if="row.action === 'stop'") -
             el-select(v-else-if="row.action === 'jump'" v-model="row.to")
-              el-option(v-for="(_, k) in config" :disabled="k === key" :value="k")
+              el-option(v-for="(_, k) in config" :disabled="k === key" :key="k" :value="k")
             el-input-number(v-else v-model="row.ratio" :controls="false" :precision="1" placeholder="1.0")
         el-table-column(align="center" header-align="center" label="Max" width="120")
           template(#default="{ row }")

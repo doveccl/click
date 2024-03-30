@@ -1,80 +1,75 @@
 import Jimp from 'jimp'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
+import type { Mat as MatCC } from '@u4/opencv4nodejs'
+import type { Mat as MatJS } from '@techstark/opencv-js'
 
-type TCVCC = typeof import('@u4/opencv4nodejs')
-type TCVJS = typeof import('@techstark/opencv-js')
+export async function saveImage(ab: ArrayBuffer, name?: string) {
+  const buf = Buffer.from(ab)
+  const { app } = await import('electron')
+  const path = join(app.getPath('userData'), 'images')
+  let file = join(path, name || `${Date.now()}.${(await Jimp.read(buf)).getExtension()}`)
+  if ((await stat(file).catch(() => null))?.isFile())
+    if (buf.compare(await readFile(file))) file = file.replace(/([^/\\]*)$/, `${Date.now()}-$1`)
+  await mkdir(path, { recursive: true })
+  await writeFile(file, buf)
+  return pathToFileURL(file).href
+}
 
-let cvcc: TCVCC | null = null
-let cvjs: TCVJS | null = null
+let cvcc: typeof import('@u4/opencv4nodejs') | undefined
+let cvjs: typeof import('@techstark/opencv-js') | undefined
 
 async function initCV() {
   if (cvcc || cvjs) return
   try {
-    // throw 'disable native for test'
     cvcc = (await import('@u4/opencv4nodejs')).default
   } catch (e) {
     console.warn('init native cv:', e)
     cvjs = (await import('@techstark/opencv-js')).default
-    while (!cvjs.Mat) await new Promise(r => setTimeout(r, 100))
+    while (!cvjs.Mat) await new Promise(r => setTimeout(r, 50))
   }
 }
 
-export default class Image {
-  readonly data: Buffer
-  readonly width: number
-  readonly height: number
+const resized = new WeakSet<Jimp>()
+const mMatsCC = new WeakMap<Jimp, MatCC>()
+const mMatsJS = new WeakMap<Jimp, MatJS>()
 
-  private matcc: InstanceType<TCVCC['Mat']> | null = null
-  private matjs: InstanceType<TCVJS['Mat']> | null = null
+export function resizeOnce(i: Jimp, dw: number) {
+  if (resized.has(i)) return
+  i.resize(dw, Jimp.AUTO)
+  resized.add(i)
+}
 
-  private async initMat() {
-    if (this.matcc || this.matjs) return
-    await initCV()
-    if (cvcc) this.matcc = new cvcc.Mat(this.data, this.height, this.width, cvcc.CV_8UC4)
-    if (cvjs) this.matjs = cvjs.matFromImageData(this)
+async function initMat(i: Jimp) {
+  if (mMatsCC.has(i) || mMatsJS.has(i)) return
+  await initCV()
+  const b = i.bitmap
+  if (cvcc) mMatsCC.set(i, new cvcc.Mat(b.data, b.height, b.width, cvcc.CV_8UC4))
+  else if (cvjs) mMatsJS.set(i, cvjs.matFromImageData(b))
+}
+
+export async function matchTmpl(i: Jimp, t: Jimp) {
+  await initMat(i)
+  await initMat(t)
+  if (cvcc) {
+    const res = await mMatsCC.get(i)!.matchTemplateAsync(mMatsCC.get(t)!, cvcc.TM_CCOEFF_NORMED)
+    const { maxLoc, maxVal } = await cvcc.minMaxLocAsync(res)
+    return res.release(), { ...maxLoc, v: maxVal }
+  } else if (cvjs) {
+    const res = new cvjs.Mat()
+    cvjs.matchTemplate(mMatsJS.get(i)!, mMatsJS.get(t)!, res, cvjs.TM_CCOEFF_NORMED)
+    // @ts-ignore
+    const { maxLoc, maxVal } = cvjs.minMaxLoc(res)
+    return res.delete(), { ...maxLoc, v: maxVal }
+  } else {
+    throw 'cv init fail'
   }
+}
 
-  constructor(rgba: Buffer, w: number, h?: number) {
-    this.data = rgba
-    this.width = w
-    this.height = h ?? rgba.length / w / 4
-  }
-
-  static async decode(img: Buffer) {
-    const { bitmap } = await Jimp.read(img)
-    return new Image(bitmap.data, bitmap.width, bitmap.height)
-  }
-
-  async toFileURL() {
-    const i = new Jimp(this)
-    const { app } = await import('electron')
-    const name = `${Date.now()}.${i.getExtension()}`
-    const path = join(app.getPath('userData'), 'images', name)
-    return await i.writeAsync(path), pathToFileURL(path).href
-  }
-
-  async find(tmpl: Image) {
-    await this.initMat()
-    await tmpl.initMat()
-    if (cvcc) {
-      const res = await this.matcc!.matchTemplateAsync(tmpl.matcc!, cvcc.TM_CCOEFF_NORMED)
-      const { maxLoc, maxVal } = await cvcc.minMaxLocAsync(res)
-      return res.release(), { ...maxLoc, v: maxVal }
-    } else if (cvjs) {
-      const res = new cvjs.Mat()
-      cvjs.matchTemplate(this.matjs!, tmpl.matjs!, res, cvjs.TM_CCOEFF_NORMED)
-      // @ts-ignore
-      const { maxLoc, maxVal } = cvjs.minMaxLoc(res)
-      return res.delete(), { ...maxLoc, v: maxVal }
-    } else {
-      throw 'cv init fail'
-    }
-  }
-
-  release() {
-    this.matcc?.release()
-    this.matjs?.delete()
-    this.matcc = this.matjs = null
-  }
+export function releaseMat(i: Jimp) {
+  mMatsCC.get(i)?.release()
+  mMatsJS.get(i)?.delete()
+  mMatsCC.delete(i)
+  mMatsJS.delete(i)
 }

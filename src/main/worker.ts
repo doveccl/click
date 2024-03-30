@@ -1,9 +1,9 @@
-import Image from './image'
-import { fileURLToPath } from 'node:url'
-import { readFile } from 'node:fs/promises'
-import { parentPort } from 'node:worker_threads'
-import { mouse, screen } from '@nut-tree/nut-js'
+import Jimp from 'jimp'
 import { each, random } from 'lodash'
+import { fileURLToPath } from 'node:url'
+import { parentPort } from 'node:worker_threads'
+import { imageToJimp, mouse, screen } from '@nut-tree/nut-js'
+import { matchTmpl, releaseMat, resizeOnce } from './image'
 
 function send(type: string, value?: unknown) {
   parentPort?.postMessage({ type, value })
@@ -15,17 +15,16 @@ function trand(min = -1, max = 1) {
 
 let key = ''
 let counts: number[] = []
-let images: Record<string, Image> = {}
+let images: Record<string, Jimp> = {}
 let profiles: Record<string, TMatcher[]> = {}
 let timer: ReturnType<typeof setTimeout> | null = null
 
 async function getImage(f = '') {
   if (images[f]) return images[f]
-  const buf = await readFile(fileURLToPath(f))
-  return (images[f] = await Image.decode(buf))
+  return await Jimp.read(fileURLToPath(f))
 }
 
-async function click(x = 0, y = 0, w = 0, h = 0, r = 1, s = 1) {
+async function click(x = 0, y = 0, w = 0, h = 0, r = 1) {
   send('rect', { x, y, w, h })
   x -= (w * (r - 1)) / 2
   y -= (h * (r - 1)) / 2
@@ -34,33 +33,35 @@ async function click(x = 0, y = 0, w = 0, h = 0, r = 1, s = 1) {
   const cx = trand(x, x + w)
   const cy = trand(y, y + h)
   send('click', { x, y, w, h, cx, cy })
-  await mouse.move([{ x: cx * s, y: cy * s }])
+  await mouse.move([{ x: cx, y: cy }])
   await mouse.leftClick()
 }
 
 async function doMatch() {
-  const { data, width } = await (await screen.grab()).toRGB()
-  const sr = (await screen.width()) / width
-  const sc = new Image(data, width)
-  send('screen', sc)
+  const sw = await screen.width()
+  const sc = imageToJimp(await screen.grab())
+  const sr = sw / sc.getWidth()
+  resizeOnce(sc, sw)
+  send('screen', sc.bitmap)
 
   let match: TMatcher | undefined
   for (const m of profiles[key]) {
     if (m.max && counts[m.id] >= m.max) continue
     send('check', m)
     const t = await getImage(m.image)
-    const r = await sc.find(t)
+    resizeOnce(t, sr * t.getWidth())
+    const r = await matchTmpl(sc, t)
     send('result', { ...m, ...r })
     if (r.v > (m.threshold ?? 0.95)) {
       match = m
       counts[m.id] = (counts[m.id] ?? 0) + 1
       if (m.max && counts[m.id] >= m.max) send('max', m)
-      if (m.action === 'click') await click(r.x, r.y, t.width, t.height, m.ratio, sr)
+      if (m.action === 'click') await click(r.x, r.y, t.getWidth(), t.getHeight(), m.ratio)
       break
     }
   }
 
-  return sc.release(), match
+  return releaseMat(sc), match
 }
 
 async function loop() {
@@ -87,7 +88,7 @@ function start(k: string, p = profiles) {
 
 function stop(err?: unknown) {
   if (timer) clearTimeout(timer), (timer = null)
-  each(images, i => i.release())
+  each(images, releaseMat)
   send('stopped', err)
 }
 

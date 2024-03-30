@@ -1,8 +1,8 @@
-import Image from './image'
-import workerPath from './worker?modulePath'
 import { once } from 'node:events'
+import { saveImage } from './image'
 import { Worker } from 'node:worker_threads'
 import { app, globalShortcut, ipcMain } from 'electron'
+import workerPath from './worker?modulePath'
 
 const worker = new Worker(workerPath)
 const waitFor = async (type: unknown) => {
@@ -12,8 +12,8 @@ const waitFor = async (type: unknown) => {
   }
 }
 
-ipcMain.handle('save', async (_, buf: Buffer) => {
-  return await (await Image.decode(buf)).toFileURL()
+ipcMain.handle('save', async (_, b: ArrayBuffer, n?: string) => {
+  return await saveImage(b, n)
 })
 
 ipcMain.handle('start', async (_, ...args) => {

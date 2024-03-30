@@ -5,7 +5,7 @@ ipcRenderer.on('', (_, m) => postMessage(m, '*'))
 
 const api = {
   dev: () => ipcRenderer.invoke('dev'),
-  save: (i: unknown) => ipcRenderer.invoke('save', i),
+  save: (i: unknown, n?: string) => ipcRenderer.invoke('save', i, n),
   start: (k: string, p: Record<string, TMatcher[]>) => ipcRenderer.invoke('start', k, p),
   stop: () => ipcRenderer.invoke('stop')
 }

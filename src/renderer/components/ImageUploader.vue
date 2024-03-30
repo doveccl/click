@@ -8,8 +8,8 @@ const emit = defineEmits<{
   (e: 'update:modelValue', s?: string): void
 }>()
 
-function save(img: unknown) {
-  return api.save(img).then(
+function save(i: unknown, n?: string) {
+  return api.save(i, n).then(
     s => emit('update:modelValue', s),
     e => ElMessage.error(e.message)
   )
@@ -18,7 +18,7 @@ function save(img: unknown) {
 async function upload(f: UploadRawFile) {
   const n = f.name.replace(/\.[^.]+$/, '')
   if (!props.name) emit('update:name', n)
-  return !save(await readBuffer(f))
+  return !save(await readBuffer(f), f.name)
 }
 </script>
 
