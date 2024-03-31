@@ -66,14 +66,15 @@ async function doMatch() {
     }
   }
 
-  return releaseMat(sc), match
+  setTimeout(() => releaseMat(sc))
+  return match
 }
 
 async function loop() {
   try {
     const res = await doMatch()
     if (res?.action === 'stop') return stop()
-    if (res) await new Promise(r => setTimeout(r, 1e3 * (res?.delay ?? DEFAULT_DELAY)))
+    await new Promise(r => setTimeout(r, 1e3 * (res?.delay ?? DEFAULT_DELAY)))
     if (!timer) return
     if (res?.action === 'jump') return start(res.to!)
     if (res?.action === 'reset') return start(key)

@@ -10,9 +10,6 @@ const dark = useDark()
 const openDev = () => api.dev()
 const switcher = { activeIcon: IEpMoon, inactiveIcon: IEpSunny }
 
-const DELAY_STR = `${DEFAULT_DELAY}s`
-const THRESHOLD_STR = `${DEFAULT_THRESHOLD}`
-
 const config = useStorage<Record<string, TMatcher[]>>('config', {})
 const key = ref(Object.keys(config.value)[0] ?? '')
 async function add() {
@@ -115,17 +112,28 @@ el-main.vspace
             image-uploader(v-model="row.image" v-model:name="row.name")
         el-table-column(align="center" header-align="center" label="Threshold" width="120")
           template(#default="{ row }")
-            el-input-number(v-model="row.threshold" :controls="false" :placeholder="THRESHOLD_STR" :precision="2")
+            el-input-number(
+              v-model="row.threshold"
+              :controls="false"
+              :placeholder="`${DEFAULT_THRESHOLD}`"
+              :precision="2"
+            )
         el-table-column(align="center" header-align="center" label="Action" width="120")
           template(#default="{ row }")
             el-select(v-model="row.action")
               el-option(v-for="i in ['click', 'jump', 'reset', 'stop']" :key="i" :label="upperFirst(i)" :value="i")
         el-table-column(align="center" header-align="center" label="Ratio / To" min-width="120")
           template(#default="{ row }")
-            el-text(v-if="row.action === 'stop'") -
+            el-input-number(
+              v-if="row.action === 'click'"
+              v-model="row.ratio"
+              :controls="false"
+              :precision="1"
+              placeholder="1.0"
+            )
             el-select(v-else-if="row.action === 'jump'" v-model="row.to")
               el-option(v-for="(_, k) in config" :disabled="k === key" :key="k" :value="k")
-            el-input-number(v-else v-model="row.ratio" :controls="false" :precision="1" placeholder="1.0")
+            el-text(v-else) -
         el-table-column(align="center" header-align="center" label="Count" width="120")
           template(#default="{ row }")
             el-input-number(v-if="row.action === 'click'" v-model="row.count" :controls="false" placeholder="1")
@@ -135,7 +143,13 @@ el-main.vspace
             el-input-number(v-model="row.max" :controls="false" :min="1" placeholder="♾️")
         el-table-column(align="center" header-align="center" label="Delay" width="120")
           template(#default="{ row }")
-            el-input-number(v-model="row.delay" :controls="false" :min="0" :placeholder="DELAY_STR" :precision="1")
+            el-input-number(
+              v-model="row.delay"
+              :controls="false"
+              :min="0"
+              :placeholder="`${DEFAULT_DELAY}s`"
+              :precision="1"
+            )
         el-table-column(fixed="right" label="Edit" width="120")
           template(#default="{ $index }")
             el-space
