@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import Sortable from 'sortablejs'
 import { isNull, upperFirst } from 'lodash'
-import { DEFAULT_THRESHOLD } from '../const'
 import { downloadText, readText } from './utils/file'
+import { DEFAULT_DELAY, DEFAULT_THRESHOLD } from '../const'
 import { type UploadRawFile } from 'element-plus'
 
 const nop = () => 0
 const dark = useDark()
 const openDev = () => api.dev()
 const switcher = { activeIcon: IEpMoon, inactiveIcon: IEpSunny }
+
+const DELAY_STR = `${DEFAULT_DELAY}s`
 const THRESHOLD_STR = `${DEFAULT_THRESHOLD}`
 
 const config = useStorage<Record<string, TMatcher[]>>('config', {})
@@ -74,7 +76,9 @@ addEventListener('message', e => {
 })
 
 async function upload(f: UploadRawFile) {
-  return !Object.assign(config.value, JSON.parse(await readText(f)))
+  Object.assign(config.value, JSON.parse(await readText(f)))
+  if (!key.value) key.value = Object.keys(config.value)[0]
+  return false
 }
 </script>
 
@@ -111,7 +115,7 @@ el-main.vspace
             image-uploader(v-model="row.image" v-model:name="row.name")
         el-table-column(align="center" header-align="center" label="Threshold" width="120")
           template(#default="{ row }")
-            el-input-number(v-model="row.threshold" :controls="false" :placeholder="THRESHOLD_STR" :precision="4")
+            el-input-number(v-model="row.threshold" :controls="false" :placeholder="THRESHOLD_STR" :precision="2")
         el-table-column(align="center" header-align="center" label="Action" width="120")
           template(#default="{ row }")
             el-select(v-model="row.action")
@@ -131,7 +135,7 @@ el-main.vspace
             el-input-number(v-model="row.max" :controls="false" :min="1" placeholder="♾️")
         el-table-column(align="center" header-align="center" label="Delay" width="120")
           template(#default="{ row }")
-            el-input-number(v-model="row.delay" :controls="false" :min="0" :precision="1" placeholder="0.5s")
+            el-input-number(v-model="row.delay" :controls="false" :min="0" :placeholder="DELAY_STR" :precision="1")
         el-table-column(fixed="right" label="Edit" width="120")
           template(#default="{ $index }")
             el-space

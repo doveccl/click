@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { parentPort } from 'node:worker_threads'
 import { imageToJimp, mouse, screen } from '@nut-tree/nut-js'
 import { matchTmpl, releaseMat, resizeOnce } from './image'
-import { DEFAULT_THRESHOLD } from '../const'
+import { DEFAULT_DELAY, DEFAULT_THRESHOLD } from '../const'
 
 function send(type: string, value?: unknown) {
   parentPort?.postMessage({ type, value })
@@ -56,6 +56,7 @@ async function doMatch() {
     resizeOnce(t, rr * t.getWidth())
     const r = await matchTmpl(sc, t)
     send('result', { ...m, ...r })
+    if (!timer) break
     if (r.v > (m.threshold ?? DEFAULT_THRESHOLD)) {
       match = m
       counts[m.id] = (counts[m.id] ?? 0) + 1
@@ -71,10 +72,12 @@ async function doMatch() {
 async function loop() {
   try {
     const res = await doMatch()
-    if (res?.action === 'stop') stop()
-    else if (res?.action === 'jump') start(res.to!)
-    else if (res?.action === 'reset') start(key)
-    else if (timer) timer = setTimeout(loop, 1e3 * (res?.delay ?? 0.5))
+    if (res?.action === 'stop') return stop()
+    if (res) await new Promise(r => setTimeout(r, 1e3 * (res?.delay ?? DEFAULT_DELAY)))
+    if (!timer) return
+    if (res?.action === 'jump') return start(res.to!)
+    if (res?.action === 'reset') return start(key)
+    timer = setTimeout(loop)
   } catch (e) {
     stop(e)
   }

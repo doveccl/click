@@ -44,7 +44,7 @@ function result(m: TMatcher) {
   const n = val.get(m.id)
   if (!n) return '...'
   if (n === -1) return '-'
-  return n.toFixed(4)
+  return n.toFixed(2)
 }
 
 onBeforeMount(() => addEventListener('message', handler))
