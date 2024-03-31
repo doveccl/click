@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Sortable from 'sortablejs'
-import { upperFirst } from 'lodash'
+import { isNull, upperFirst } from 'lodash'
+import { DEFAULT_THRESHOLD } from '../const'
 import { downloadText, readText } from './utils/file'
 import { type UploadRawFile } from 'element-plus'
 
@@ -8,6 +9,7 @@ const nop = () => 0
 const dark = useDark()
 const openDev = () => api.dev()
 const switcher = { activeIcon: IEpMoon, inactiveIcon: IEpSunny }
+const THRESHOLD_STR = `${DEFAULT_THRESHOLD}`
 
 const config = useStorage<Record<string, TMatcher[]>>('config', {})
 const key = ref(Object.keys(config.value)[0] ?? '')
@@ -48,7 +50,8 @@ const running = ref(false)
 
 function start() {
   loading.value = true
-  return api.start(key.value, toRaw(config.value))
+  const s = JSON.stringify(config.value, (_, v) => (isNull(v) ? undefined : v))
+  return api.start(key.value, JSON.parse(s))
 }
 function stop() {
   loading.value = true
@@ -58,9 +61,10 @@ function stop() {
 addEventListener('message', e => {
   const { type, value: r } = e.data
   if (type === 'stopped') {
-    if (r) ElNotification.error(r.message ?? r)
+    r && ElNotification.error(r.message ?? r)
     loading.value = running.value = false
     title.value = 'Profiles'
+    r && console.warn(r)
   } else if (type === 'started') {
     key.value = r
     running.value = true
@@ -107,17 +111,21 @@ el-main.vspace
             image-uploader(v-model="row.image" v-model:name="row.name")
         el-table-column(align="center" header-align="center" label="Threshold" width="120")
           template(#default="{ row }")
-            el-input-number(v-model="row.threshold" :controls="false" :precision="4" placeholder="0.95")
+            el-input-number(v-model="row.threshold" :controls="false" :placeholder="THRESHOLD_STR" :precision="4")
         el-table-column(align="center" header-align="center" label="Action" width="120")
           template(#default="{ row }")
             el-select(v-model="row.action")
-              el-option(v-for="i in ['click', 'jump', 'stop']" :key="i" :label="upperFirst(i)" :value="i")
+              el-option(v-for="i in ['click', 'jump', 'reset', 'stop']" :key="i" :label="upperFirst(i)" :value="i")
         el-table-column(align="center" header-align="center" label="Ratio / To" min-width="120")
           template(#default="{ row }")
             el-text(v-if="row.action === 'stop'") -
             el-select(v-else-if="row.action === 'jump'" v-model="row.to")
               el-option(v-for="(_, k) in config" :disabled="k === key" :key="k" :value="k")
             el-input-number(v-else v-model="row.ratio" :controls="false" :precision="1" placeholder="1.0")
+        el-table-column(align="center" header-align="center" label="Count" width="120")
+          template(#default="{ row }")
+            el-input-number(v-if="row.action === 'click'" v-model="row.count" :controls="false" placeholder="1")
+            el-text(v-else) -
         el-table-column(align="center" header-align="center" label="Max" width="120")
           template(#default="{ row }")
             el-input-number(v-model="row.max" :controls="false" :min="1" placeholder="♾️")

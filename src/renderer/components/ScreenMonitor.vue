@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { DEFAULT_THRESHOLD } from '../../const'
+
 defineProps<{ matchers?: TMatcher[] }>()
 const val = reactive(new Map<number, number>())
 const max = reactive(new Map<number, boolean>())
@@ -35,7 +37,7 @@ function color(m: TMatcher) {
   const n = val.get(m.id)
   if (!n) return ''
   if (n === -1) return 'info'
-  return n > (m.threshold ?? 0.95) ? 'success' : 'danger'
+  return n > (m.threshold ?? DEFAULT_THRESHOLD) ? 'success' : 'danger'
 }
 
 function result(m: TMatcher) {

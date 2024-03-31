@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { parentPort } from 'node:worker_threads'
 import { imageToJimp, mouse, screen } from '@nut-tree/nut-js'
 import { matchTmpl, releaseMat, resizeOnce } from './image'
+import { DEFAULT_THRESHOLD } from '../const'
 
 function send(type: string, value?: unknown) {
   parentPort?.postMessage({ type, value })
@@ -19,29 +20,32 @@ let images: Record<string, Jimp> = {}
 let profiles: Record<string, TMatcher[]> = {}
 let timer: ReturnType<typeof setTimeout> | null = null
 
+let sr = 1 // screen.width / resized_screenshot.width
+
 async function getImage(f = '') {
   if (images[f]) return images[f]
-  return await Jimp.read(fileURLToPath(f))
+  return (images[f] = await Jimp.read(fileURLToPath(f)))
 }
 
-async function click(x = 0, y = 0, w = 0, h = 0, r = 1) {
+async function click(x = 0, y = 0, w = 0, h = 0, { ratio = 1, count = 1 }) {
   send('rect', { x, y, w, h })
-  x -= (w * (r - 1)) / 2
-  y -= (h * (r - 1)) / 2
-  w *= r
-  h *= r
+  x -= (w * (ratio - 1)) / 2
+  y -= (h * (ratio - 1)) / 2
+  w *= ratio
+  h *= ratio
   const cx = trand(x, x + w)
   const cy = trand(y, y + h)
   send('click', { x, y, w, h, cx, cy })
-  await mouse.move([{ x: cx, y: cy }])
-  await mouse.leftClick()
+  await mouse.move([{ x: sr * cx, y: sr * cy }])
+  while (count--) await mouse.leftClick()
 }
 
 async function doMatch() {
-  const sw = await screen.width()
+  let rr = 1 // resize screenshot scale ratio
   const sc = imageToJimp(await screen.grab())
-  const sr = sw / sc.getWidth()
-  resizeOnce(sc, sw)
+  while (rr * sc.getWidth() > 1e3) rr /= 2
+  resizeOnce(sc, rr * sc.getWidth())
+  sr = (await screen.width()) / sc.getWidth()
   send('screen', sc.bitmap)
 
   let match: TMatcher | undefined
@@ -49,14 +53,14 @@ async function doMatch() {
     if (m.max && counts[m.id] >= m.max) continue
     send('check', m)
     const t = await getImage(m.image)
-    resizeOnce(t, sr * t.getWidth())
+    resizeOnce(t, rr * t.getWidth())
     const r = await matchTmpl(sc, t)
     send('result', { ...m, ...r })
-    if (r.v > (m.threshold ?? 0.95)) {
+    if (r.v > (m.threshold ?? DEFAULT_THRESHOLD)) {
       match = m
       counts[m.id] = (counts[m.id] ?? 0) + 1
       if (m.max && counts[m.id] >= m.max) send('max', m)
-      if (m.action === 'click') await click(r.x, r.y, t.getWidth(), t.getHeight(), m.ratio)
+      if (m.action === 'click') await click(r.x, r.y, t.getWidth(), t.getHeight(), m)
       break
     }
   }
@@ -69,6 +73,7 @@ async function loop() {
     const res = await doMatch()
     if (res?.action === 'stop') stop()
     else if (res?.action === 'jump') start(res.to!)
+    else if (res?.action === 'reset') start(key)
     else if (timer) timer = setTimeout(loop, 1e3 * (res?.delay ?? 0.5))
   } catch (e) {
     stop(e)
