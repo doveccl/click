@@ -8,6 +8,15 @@ const emit = defineEmits<{
   (e: 'update:modelValue', s?: string): void
 }>()
 
+const url = ref('')
+api.url().then(x => (url.value = x))
+const src = computed(() => `${url.value}/${props.modelValue}`)
+
+watchEffect(() => {
+  // auto change image path for old version
+  props.modelValue?.startsWith('file:') && emit('update:modelValue', decodeURI(props.modelValue.split('/').at(-1)!))
+})
+
 function save(i: unknown, n?: string) {
   return api.save(i, n).then(
     s => emit('update:modelValue', s),
@@ -24,7 +33,7 @@ async function upload(f: UploadRawFile) {
 
 <template lang="pug">
 .image(v-if="modelValue")
-  el-image(:preview-src-list="[modelValue]" :src="modelValue" preview-teleported)
+  el-image(:preview-src-list="[src]" :src="src" preview-teleported)
   .actions
     el-button(link @click="$el.querySelector('img').click()")
       el-icon

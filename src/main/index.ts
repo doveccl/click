@@ -6,8 +6,7 @@ app.on('window-all-closed', app.quit)
 app.whenReady().then(async () => {
   const mainWindow = new BrowserWindow({
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      webSecurity: !process.env.ELECTRON_RENDERER_URL
+      preload: join(__dirname, '../preload/index.js')
     }
   })
   if (process.env.ELECTRON_RENDERER_URL) {

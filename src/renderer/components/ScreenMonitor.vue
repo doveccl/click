@@ -25,9 +25,9 @@ function handler(e: MessageEvent) {
     ctx.fillRect(r.x, r.y, r.w, r.h)
   } else if (type === 'click') {
     ctx.fillStyle = '#0909'
-    ctx.fillRect(r.x, r.y, r.w, r.h)
+    ctx.fillRect(r.left, r.top, r.width, r.height)
     ctx.beginPath()
-    ctx.arc(r.cx, r.cy, 10, 0, 2 * Math.PI)
+    ctx.arc(r.x, r.y, 10, 0, 2 * Math.PI)
     ctx.fillStyle = '#e00e'
     ctx.fill()
   }

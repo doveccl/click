@@ -1,5 +1,5 @@
+import { BASE } from './apis'
 import { once } from 'node:events'
-import { saveImage } from './image'
 import { Worker } from 'node:worker_threads'
 import { app, globalShortcut, ipcMain } from 'electron'
 import workerPath from './worker?modulePath'
@@ -12,10 +12,6 @@ const waitFor = async (type: unknown) => {
   }
 }
 
-ipcMain.handle('save', async (_, b: ArrayBuffer, n?: string) => {
-  return await saveImage(b, n)
-})
-
 ipcMain.handle('start', async (_, ...args) => {
   worker.postMessage(args)
   return await waitFor('started')
@@ -27,6 +23,7 @@ ipcMain.handle('stop', async () => {
 })
 
 app.whenReady().then(() => {
+  worker.postMessage({ BASE })
   globalShortcut.register('Alt+CommandOrControl+T', () => worker.postMessage('stop'))
 })
 

@@ -1,0 +1,12 @@
+appId: com.doveccl.click
+productName: Click
+artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+files: [out]
+directories:
+  output: dist
+win:
+  target: portable
+mac:
+  target: zip
+linux:
+  target: AppImage

@@ -10,6 +10,8 @@ const dark = useDark()
 const openDev = () => api.dev()
 const switcher = { activeIcon: IEpMoon, inactiveIcon: IEpSunny }
 
+const fast = useStorage('fast', 1)
+const window = useStorage('window', true)
 const config = useStorage<Record<string, TMatcher[]>>('config', {})
 const key = ref(Object.keys(config.value)[0] ?? '')
 async function add() {
@@ -50,7 +52,7 @@ const running = ref(false)
 function start() {
   loading.value = true
   const s = JSON.stringify(config.value, (_, v) => (isNull(v) ? undefined : v))
-  return api.start(key.value, JSON.parse(s))
+  return api.start(key.value, JSON.parse(s), window.value, fast.value)
 }
 function stop() {
   loading.value = true
@@ -63,7 +65,7 @@ addEventListener('message', e => {
     r && ElNotification.error(r.message ?? r)
     loading.value = running.value = false
     title.value = 'Profiles'
-    r && console.warn(r)
+    r && console.error(r)
   } else if (type === 'started') {
     key.value = r
     running.value = true
@@ -82,9 +84,14 @@ async function upload(f: UploadRawFile) {
 <template lang="pug">
 el-main.vspace
   el-card
-    el-row(justify="space-between" @click.alt="openDev")
-      el-button(v-if="running" :loading="loading" type="danger" @click="stop") Stop (Ctrl + Alt + T)
-      el-button(v-else :disabled="!key || !config[key].length" :loading="loading" type="success" @click="start") Start
+    el-row(justify="space-between" @click.right="openDev")
+      el-space(size="large")
+        el-select(:disabled="running" :model-value="window ? 'win' : 'full'" @change="window = $event === 'win'")
+          el-option(label="Active Window" value="win")
+          el-option(label="Full Screen" value="full")
+        el-checkbox(:disabled="running" :model-value="fast === 2" @change="fast = $event ? 2 : 1") Fast
+        el-button(v-if="running" :loading="loading" type="danger" @click="stop") Stop (Ctrl + Alt + T)
+        el-button(v-else :disabled="!key || !config[key].length" :loading="loading" type="success" @click="start") Start
       el-space(size="large")
         el-button(@click="downloadText(JSON.stringify(config), 'config.json')")
           el-icon
@@ -177,6 +184,9 @@ body
   background-color: rgba(136,136,136,0.4)
   :hover
     background-color: rgba(136,136,136,0.6)
+
+.el-space .el-select
+  min-width: 10em
 
 .vspace > :not(:last-child)
   margin-bottom: 1em
