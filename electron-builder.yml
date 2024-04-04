@@ -1,10 +1,17 @@
 appId: com.doveccl.click
 productName: Click
 artifactName: ${productName}-${version}-${os}-${arch}.${ext}
-files: [out]
+npmRebuild: false
 directories:
   output: dist
-npmRebuild: false
+files:
+  - out
+  - '!**/*.{cmake,js.map}'
+  - '!node_modules/@u4/opencv-build/dist/opencv-*/**/*'
+  - node_modules/@u4/opencv-build/dist/opencv-*/*.json
+  - node_modules/@u4/opencv-build/dist/opencv-*/build/lib/*
+  - '!node_modules/@u4/opencv4nodejs/{bin,build,cc,install,typings}/**/*'
+  - node_modules/@u4/opencv4nodejs/build/Release/*.node
 win:
   target: portable
 mac:
