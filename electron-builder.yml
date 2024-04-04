@@ -7,14 +7,18 @@ directories:
 files:
   - out
   - '!**/*.{cmake,js.map}'
-  - '!node_modules/@u4/opencv-build/dist/opencv-*/**/*'
-  - node_modules/@u4/opencv-build/dist/opencv-*/*.json
-  - node_modules/@u4/opencv-build/dist/opencv-*/build/lib/*
   - '!node_modules/@u4/opencv4nodejs/{bin,build,cc,install,typings}/**/*'
   - node_modules/@u4/opencv4nodejs/build/Release/*.node
 win:
   target: portable
 mac:
   target: zip
+  files:
+    - '!node_modules/@u4/opencv-build/dist/opencv-*/**/*'
+    - node_modules/@u4/opencv-build/dist/opencv-*/*.json
+  extraFiles:
+    - from: node_modules/@u4/opencv-build/dist/latest/build/lib
+      to: Frameworks
+      filter: ['*.dylib']
 linux:
   target: AppImage

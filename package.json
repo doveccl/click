@@ -12,7 +12,7 @@
   },
   "scripts": {
     "dev": "electron-vite",
-    "build": "electron-vite build && node fix.mjs && electron-builder",
+    "build": "electron-vite build && electron-builder",
     "build:cc": "build-opencv --electron --nocontrib rebuild"
   },
   "dependencies": {
@@ -30,9 +30,9 @@
     "@types/node": "^20.12.4",
     "@types/sortablejs": "^1.15.8",
     "@vitejs/plugin-vue": "^5.0.4",
-    "@vue/language-plugin-pug": "^2.0.7",
+    "@vue/language-plugin-pug": "^2.0.10",
     "@vueuse/core": "^10.9.0",
-    "electron": "^29.1.6",
+    "electron": "^29.2.0",
     "electron-builder": "^24.13.3",
     "electron-vite": "^2.1.0",
     "element-plus": "^2.6.3",
