@@ -14,8 +14,7 @@ win:
 mac:
   target: zip
   files:
-    - '!node_modules/@u4/opencv-build/dist/opencv-*/**/*'
-    - node_modules/@u4/opencv-build/dist/opencv-*/*.json
+    - '!node_modules/@u4/opencv-build/dist/opencv-*/build'
   extraFiles:
     - from: node_modules/@u4/opencv-build/dist/latest/build/lib
       to: Frameworks
