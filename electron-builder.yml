@@ -4,6 +4,7 @@ artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 files: [out]
 directories:
   output: dist
+npmRebuild: false
 win:
   target: portable
 mac:
