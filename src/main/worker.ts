@@ -27,6 +27,8 @@ function send(type: string, value?: unknown) {
   parentPort?.postMessage({ type, value })
 }
 
+console.warn = (...args) => send('warn', args)
+
 async function getImage(f = '') {
   if (images[f]) return images[f]
   return (images[f] = await imageResource(f))

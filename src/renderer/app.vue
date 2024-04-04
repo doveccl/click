@@ -71,6 +71,8 @@ addEventListener('message', e => {
     running.value = true
     loading.value = false
     title.value = 'Monitor'
+  } else if (type === 'warn') {
+    console.warn(...r)
   }
 })
 
