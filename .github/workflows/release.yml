@@ -1,0 +1,21 @@
+name: Release
+
+on:
+  push:
+    tags: [v*]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+      - uses: pnpm/action-setup@v3
+      - run: pnpm i && pnpm build
+      - uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          artifacts: dist/*.{zip,exe,AppImage}
