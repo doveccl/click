@@ -33,7 +33,7 @@ async function upload(f: UploadRawFile) {
 
 <template lang="pug">
 .image(v-if="modelValue")
-  el-image(:preview-src-list="[src]" :src="src" preview-teleported)
+  el-image(v-if="url" :preview-src-list="[src]" :src="src" preview-teleported)
   .actions
     el-button(link @click="$el.querySelector('img').click()")
       el-icon
