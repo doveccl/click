@@ -9,7 +9,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-13-arm64, macos-13]
+        os: [ubuntu-latest, windows-latest, macos-14, macos-13]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,8 +19,12 @@ jobs:
         with:
           version: 8
       - if: ${{ startsWith(matrix.os, 'mac') }}
-        run: sudo -H pip install setuptools
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
       - run: pnpm install
+      - if: ${{ startsWith(matrix.os, 'win') }}
+        run: pnpm build:cc
       - if: ${{ !startsWith(matrix.os, 'win') }}
         run: pnpm build:cc
         env:
