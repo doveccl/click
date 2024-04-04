@@ -19,6 +19,8 @@ jobs:
         with:
           version: 8
       - run: pnpm install
+      - if: ${{ startsWith(matrix.os, 'mac') }}
+        run: sudo -H pip install setuptools
       - if: ${{ !startsWith(matrix.os, 'win') }}
         run: pnpm build:cc
       - run: pnpm build
