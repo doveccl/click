@@ -9,7 +9,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-14, macos-13]
+        os: [windows-latest, macos-14, macos-13]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,17 +18,10 @@ jobs:
       - uses: pnpm/action-setup@v3
         with:
           version: 8
-      - if: ${{ startsWith(matrix.os, 'mac') }}
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11.9'
       - run: pnpm install
-      - if: ${{ startsWith(matrix.os, 'win') }}
-        run: pnpm build:cc
-      - if: ${{ !startsWith(matrix.os, 'win') }}
-        run: pnpm build:cc
-        env:
-          CXXFLAGS: -std=c++17
       - run: pnpm build
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}

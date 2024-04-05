@@ -13,11 +13,10 @@
   "scripts": {
     "dev": "electron-vite",
     "build": "electron-vite build && electron-builder",
-    "build:cc": "build-opencv --electron --nocontrib rebuild"
+    "postinstall": "node postinstall.mjs"
   },
   "dependencies": {
     "@nut-tree/nut-js": "^4.1.0",
-    "@techstark/opencv-js": "4.9.0-release.3",
     "@u4/opencv4nodejs": "^6.5.3",
     "ghost-cursor": "^1.2.0",
     "lodash": "^4.17.21"

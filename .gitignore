@@ -1,3 +1,7 @@
+# DLLs
+*.dll
+*.dylib
+
 # Logs
 logs
 *.log
