@@ -25,7 +25,7 @@ if (opencv) {
     const lib = join(dist, opencv.name, 'build/bin/Release')
     for (const d of await readdir(lib)) if (d.endsWith('.dll')) await cp(join(lib, d), d)
   } else if (process.platform === 'darwin') {
-    const lib = join(dist, opencv.name, 'build/lib/Release')
+    const lib = join(dist, opencv.name, 'build/lib')
     for (const d of await readdir(lib)) if (d.endsWith('.dylib')) await cp(join(lib, d), d)
   }
 }
