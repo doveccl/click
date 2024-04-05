@@ -19,6 +19,6 @@ win:
 mac:
   target: zip
   extraFiles:
-    - from: .
+    - from: node_modules/@u4/opencv-build/dist/latest/build/lib
       to: Frameworks
       filter: ['*.dylib']

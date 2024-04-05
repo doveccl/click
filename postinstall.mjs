@@ -20,12 +20,7 @@ if (!(await findOpenCV())) {
 }
 
 const opencv = await findOpenCV()
-if (opencv) {
-  if (process.platform === 'win32') {
-    const lib = join(dist, opencv.name, 'build/bin/Release')
-    for (const d of await readdir(lib)) if (d.endsWith('.dll')) await cp(join(lib, d), d)
-  } else if (process.platform === 'darwin') {
-    const lib = join(dist, opencv.name, 'build/lib')
-    for (const d of await readdir(lib)) if (d.endsWith('.dylib')) await cp(join(lib, d), d)
-  }
+if (opencv && process.platform === 'win32') {
+  const lib = join(dist, opencv.name, 'build/bin/Release')
+  for (const d of await readdir(lib)) if (d.endsWith('.dll')) await cp(join(lib, d), d)
 }
